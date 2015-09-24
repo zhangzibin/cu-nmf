@@ -1,17 +1,18 @@
 # cu-nmf
-NMF based on cuda, sparse matrix as input.
-I implement the Non-negative Matrix Factorization (NMF) algorithm with sparse matrix as input based on cuda. Aim at large scale data and fast training.
+NMF(Non-negative Matrix Factorization) based on cuda, sparse matrix as input. Aim at large scale data and fast training.
 
 
 # Requirements
 The code is base on cuda, cuBlas and cuSparse precisely. Please get cuda from Nvidia, https://developer.nvidia.com/cuda-downloads.
 
-
 # Future Work
-Only SGD with fixed learning rate is support by now for its simplicity. If time permits, I will implement other algorithms(projected gradient methods, multiplicative update rules, and multi-GPU support) in the feature.
+Only SGD with fixed learning rate is support by now for its simplicity and the main algorithm is alternating non-negative least squares.
+If time permits, I will implement other algorithms(projected gradient methods, multiplicative update rules, and multi-GPU support) in the feature.
 
 
 # Usage
+The input matrix is store in a .txt file in sparse format. Each line is a non-zero value with its row index and column index. The Index is 0 based. For example, text.txt.
+You should use nvcc to compile the code, so make sure cuda is installed and environment is correctly setted.
 ```bash
 $ make
 $ ./NMF_sgd -train test.txt
