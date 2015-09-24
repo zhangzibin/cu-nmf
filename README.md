@@ -7,12 +7,15 @@ The code is base on cuda, cuBlas and cuSparse precisely. Please get cuda from Nv
 
 # Future Work
 Only SGD with fixed learning rate is support by now for its simplicity and the main algorithm is alternating non-negative least squares.
+
 If time permits, I will implement other algorithms(projected gradient methods, multiplicative update rules, and multi-GPU support) in the feature.
 
 
 # Usage
 The input matrix is store in a .txt file in sparse format. Each line is a non-zero value with its row index and column index. The Index is 0 based. For example, text.txt.
+
 You should use nvcc to compile the code, so make sure cuda is installed and environment is correctly setted.
+
 ```bash
 $ make
 $ ./NMF_sgd -train test.txt
