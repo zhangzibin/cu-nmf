@@ -12,7 +12,7 @@ If time permits, I will implement other algorithms(projected gradient methods, m
 
 
 # Usage
-The input matrix is store in a .txt file in sparse format. Each line is a non-zero value with its row index and column index. The Index is 0 based. For example, text.txt.
+The input matrix is store in a .txt file in sparse format. The firsr line is row and column number. Then Each line is a non-zero value with its row index and column index. All numbers are split by a blank. The Index is 0 based. For example, text.txt.
 
 You should use nvcc to compile the code, so make sure cuda is installed and environment is correctly setted.
 
