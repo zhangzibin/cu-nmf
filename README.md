@@ -1,5 +1,6 @@
 # cu-nmf
 NMF(Non-negative Matrix Factorization) based on cuda, with sparse matrix as input. Aim at large scale data and fast training.
+WARNING: The code is still developing and full of bugs!
 
 
 # Requirements
