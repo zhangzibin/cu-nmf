@@ -14,20 +14,19 @@ const real one = 1.0;
 const real negOne = -1.0;
 
 /* define variables */
-cusparseHandle_t handle_sparse = 0;
-cusparseMatDescr_t descr_sparse = 0;
-cublasHandle_t handle_blas = 0;
-cudaError_t cudaStat;       //for cuda errors
-int m, n=2, k;                //V=WH, V:m*k, W:m*n, H:n*k
+int m, n=2, k;              //V=WH, V:m*k, W:m*n, H:n*k
 int lineNumber = -1;        //line number(positive value) of V
 FILE *file;                 //file handle
 char _str[MAX_STRING];      //a black hole for string reading
 int tmpRow, tmpCol;         //tmp variables for reading sparse matrix index
 real tmpVal;                //tmp variable for reading sparse matrix value
-int *VRowIndexHost;         //row index of V in host
-int *VColIndexHost;         //column index of V in host
-real *VValHost;             //value of V in host
-real *WValHost, *HValHost;  //value of W,H in host
+
+int *VRowIndexHost = 0;     //row index of V in host
+int *VColIndexHost = 0;     //column index of V in host
+real *VValHost = 0;         //value of V in host
+real *WValHost = 0;         //value of W in host
+real *HValHost = 0;         //value of H in host
+
 int *VRowCoo;               //row index of V in GPU in COO format, for reading data only
 int *VRow;                  //row index of V in GPU
 int *VCol;                  //col index of V in GPU
@@ -40,16 +39,17 @@ real lrate = 0.05;          //learning rate of sub problem
 int maxiterMain = 500;      //max iter number of main problem
 int maxiterSub = 100;       //max iter number of sub problem
 
-// free these varibles at last cause error?
-/*
-    if (WValHost) free(WValHost);                   \
-    if (HValHost) free(HValHost);                   \
- */
+cusparseHandle_t handle_sparse = 0;
+cusparseMatDescr_t descr_sparse = 0;
+cublasHandle_t handle_blas = 0;
+cudaError_t cudaStat;       //for cuda errors
 
 /* a macro for free memory*/
 #define CLEANUP(s)                                  \
 do {                                                \
     printf ("%s\n", s);                             \
+    if (WValHost) free(WValHost);                   \
+    if (HValHost) free(HValHost);                   \
     if (V) cudaFree(V);                             \
     if (VRow) cudaFree(VRow);                       \
     if (VCol) cudaFree(VCol);                       \
@@ -65,8 +65,8 @@ do {                                                \
 /* random init a array data of size p */
 void randomInit(real *data, int p){
     int i = 0;
-    for (; i < p; ++i)
-        data[i] = rand() / (real)RAND_MAX;
+    for (; i < p; i++)
+        *(data+i) = (real)rand() / (real)RAND_MAX;
 }
 
 /* print a matrix of size row*col */
@@ -91,29 +91,33 @@ void initVaribles(){
         lineNumber++;
     fclose(file);
     printf("Line number(positive value) of V: %d\n", lineNumber);
-    VRowIndexHost = (int *)malloc(lineNumber*sizeof(int));
-    VColIndexHost = (int *)malloc(lineNumber*sizeof(int));
-    VValHost = (real *)malloc(lineNumber*sizeof(real));
-    WValHost = (real *)malloc(m*n*sizeof(real));
-    HValHost = (real *)malloc(n*k*sizeof(real));
-    if((!VRowIndexHost) || (!VColIndexHost) || (!VValHost) || !(WValHost) || !(HValHost)){
+    VRowIndexHost = (int *)malloc(lineNumber*sizeof(*VRowIndexHost));
+    VColIndexHost = (int *)malloc(lineNumber*sizeof(*VColIndexHost));
+    VValHost = (real *)malloc(lineNumber*sizeof(*VValHost));
+    if((!VRowIndexHost) || (!VColIndexHost) || (!VValHost)){
         CLEANUP("Host malloc failed (matrix)");
         exit(1);
     }
     file = fopen(filename, "r");
-    int i = 0;
     fscanf(file, "%d %d", &m, &k);
+    WValHost = (real *)malloc(m*n*sizeof(*WValHost));
+    HValHost = (real *)malloc(n*k*sizeof(*HValHost));
+    if(!(WValHost) || !(HValHost)){
+        CLEANUP("Host malloc failed (matrix)");
+        exit(1);
+    }
+    printf("Matrix shape of m n k: %d %d %d\n", m, n, k);
+    randomInit(WValHost, m*n);
+    randomInit(HValHost, n*k);
+    int i = 0;
     while(fscanf(file, "%d %d %f", &tmpRow, &tmpCol, &tmpVal) != EOF){
-        VRowIndexHost[i] = tmpRow;
-        VColIndexHost[i] = tmpCol;
-        VValHost[i] = tmpVal;
+        *(VRowIndexHost+i) = tmpRow;
+        *(VColIndexHost+i) = tmpCol;
+        *(VValHost+i) = tmpVal;
         i++;
     }
     fclose(file);
-    randomInit(WValHost, m*n);
-    randomInit(HValHost, n*k);
 
-    printf("Matrix shape of m n k: %d %d %d\n", m, n, k);
     /*
     printf("W:\n");
     outPutMatrix(m, n, WValHost);
@@ -279,7 +283,7 @@ int ArgPos(char *str, int argc, char **argv){
 
 int main(int argc, char **argv){
     int i, j = 0;
-    if (argc == 1) {
+    if(argc == 1){
         printf("NMF: Non-negative Matrix Factorization\n\n");
         printf("Options:\n");
         printf("Parameters for training:\n");
