@@ -2,13 +2,13 @@
 #include<stdlib.h>
 #include<string.h>
 #include<time.h>
-#include<cuda_runtime.h> 
+#include<cuda_runtime.h>
 #include<cusparse.h>
 #include<cublas_v2.h>
 
 #define MAX_STRING 100
 #define IDX2C(i,j,ld) (((j)*(ld))+(i))
-typedef float real; 
+typedef float real;
 const real zero = 0.0;
 const real one = 1.0;
 const real negOne = -1.0;
@@ -23,29 +23,33 @@ int lineNumber = -1;        //line number(positive value) of V
 FILE *file;                 //file handle
 char _str[MAX_STRING];      //a black hole for string reading
 int tmpRow, tmpCol;         //tmp variables for reading sparse matrix index
-real tmpVal;                //tmp variable for reading sparse matrix value  
+real tmpVal;                //tmp variable for reading sparse matrix value
 int *VRowIndexHost;         //row index of V in host
 int *VColIndexHost;         //column index of V in host
 real *VValHost;             //value of V in host
-real *WValHost, *HValHost;  //value of W,H in host 
+real *WValHost, *HValHost;  //value of W,H in host
 int *VRowCoo;               //row index of V in GPU in COO format, for reading data only
 int *VRow;                  //row index of V in GPU
 int *VCol;                  //col index of V in GPU
 real *V;                    //V in GPU
 real *W, *H;                //W,H in GPU
 
-char filename[100];         //the file of V, store as sparse matrix 
+char filename[100];         //the file of V, store as sparse matrix
 int gpuid = 0;              //GPU to use
 real lrate = 0.05;          //learning rate of sub problem
-int maxiterMain = 500;      //max iter number of main problem 
-int maxiterSub = 100;       //max iter number of sub problem 
+int maxiterMain = 500;      //max iter number of main problem
+int maxiterSub = 100;       //max iter number of sub problem
+
+// free these varibles at last cause error?
+/*
+    if (WValHost) free(WValHost);                   \
+    if (HValHost) free(HValHost);                   \
+ */
 
 /* a macro for free memory*/
 #define CLEANUP(s)                                  \
 do {                                                \
     printf ("%s\n", s);                             \
-    if (WValHost) free(WValHost);                   \
-    if (HValHost) free(HValHost);                   \
     if (V) cudaFree(V);                             \
     if (VRow) cudaFree(VRow);                       \
     if (VCol) cudaFree(VCol);                       \
@@ -53,21 +57,22 @@ do {                                                \
     if (H) cudaFree(H);                             \
     cusparseDestroy(handle_sparse);                 \
     cusparseDestroyMatDescr(descr_sparse);          \
-	cublasDestroy(handle_blas);                     \
+    cublasDestroy(handle_blas);                     \
     cudaDeviceReset();                              \
     fflush (stdout);                                \
 } while (0)
 
 /* random init a array data of size p */
 void randomInit(real *data, int p){
-    for (int i = 0; i < p; ++i)
+    int i = 0;
+    for (; i < p; ++i)
         data[i] = rand() / (real)RAND_MAX;
 }
 
 /* print a matrix of size row*col */
 void outPutMatrix(int row, int col, real *A)
 {
-	int i, j;
+    int i, j;
     for(i = 0; i < row; i++){
         for(j = 0; j < col; j++)
             printf("%10.4f ", A[IDX2C(i,j,row)]);
@@ -77,7 +82,6 @@ void outPutMatrix(int row, int col, real *A)
 
 /* init variables */
 void initVaribles(){
-
     /* allocate memory and initial */
     if((file = fopen(filename, "r")) == NULL){
         printf("File %s not found!\n", filename);
@@ -125,11 +129,11 @@ void shipping(){
         CLEANUP("Device not found, check your gpuid!");
         exit(1);
     }
-    cudaMalloc((void**)&VRowCoo, lineNumber*sizeof(int)); 
-    cudaMalloc((void**)&VCol, lineNumber*sizeof(int)); 
-    cudaMalloc((void**)&V, lineNumber*sizeof(real)); 
-    cudaMalloc((void**)&W, m*n*sizeof(real)); 
-    cudaMalloc((void**)&H, n*k*sizeof(real)); 
+    cudaMalloc((void**)&VRowCoo, lineNumber*sizeof(int));
+    cudaMalloc((void**)&VCol, lineNumber*sizeof(int));
+    cudaMalloc((void**)&V, lineNumber*sizeof(real));
+    cudaMalloc((void**)&W, m*n*sizeof(real));
+    cudaMalloc((void**)&H, n*k*sizeof(real));
 
     cudaMemcpy(VRowCoo, VRowIndexHost, (size_t)(lineNumber*sizeof(int)), cudaMemcpyHostToDevice);
     cudaMemcpy(VCol, VColIndexHost, (size_t)(lineNumber*sizeof(int)), cudaMemcpyHostToDevice);
@@ -138,7 +142,7 @@ void shipping(){
     cudaMemcpy(H, HValHost, (size_t)(n*k*sizeof(real)), cudaMemcpyHostToDevice);
 
     /* setup cusparse and cublas library */
-    cusparseCreate(&handle_sparse); 
+    cusparseCreate(&handle_sparse);
     cusparseCreateMatDescr(&descr_sparse);
     cusparseSetMatType(descr_sparse,CUSPARSE_MATRIX_TYPE_GENERAL);
     cusparseSetMatIndexBase(descr_sparse,CUSPARSE_INDEX_BASE_ZERO);
@@ -151,7 +155,7 @@ void shipping(){
     //slowTest
     /*
     real *Vdense, *VdenseHost;
-    cudaMalloc((void**)&Vdense, m*k*sizeof(real)); 
+    cudaMalloc((void**)&Vdense, m*k*sizeof(real));
     cusparseScsr2dense(handle_sparse, m, k, descr_sparse, V, VRow, VCol, Vdense, m);
     VdenseHost = (real *)malloc(m*k*sizeof(real));
     cudaMemcpy(VdenseHost, Vdense, (size_t)(m*k*sizeof(real)), cudaMemcpyDeviceToHost);
@@ -160,28 +164,28 @@ void shipping(){
     */
 
     /* free some useless variables */
-    if (VValHost) free(VValHost);                   
-    if (VRowIndexHost) free(VRowIndexHost);        
-    if (VColIndexHost) free(VColIndexHost);       
-    if (VRowCoo) cudaFree(VRowCoo);        
+    if (VValHost) free(VValHost);
+    if (VRowIndexHost) free(VRowIndexHost);
+    if (VColIndexHost) free(VColIndexHost);
+    if (VRowCoo) cudaFree(VRowCoo);
 }
 
 /* shipping back to host */
 void backHost(){
-    cudaMemcpy(WValHost, W, (size_t)(m*n*sizeof(real)), cudaMemcpyDeviceToHost); 
-    cudaMemcpy(HValHost, H, (size_t)(n*k*sizeof(real)), cudaMemcpyDeviceToHost); 
+    cudaMemcpy(WValHost, W, (size_t)(m*n*sizeof(real)), cudaMemcpyDeviceToHost);
+    cudaMemcpy(HValHost, H, (size_t)(n*k*sizeof(real)), cudaMemcpyDeviceToHost);
 }
 
-real subprob(real *V, cusparseOperation_t transV, int rowV, int colV, real *W, real *H, 
-             int mm, int nn, int kk, real lrate, int maxiter2, int *realIter, real tol){
+real subprob(real *V, cusparseOperation_t transV, int rowV, int colV, real *W, real *H, \
+            int mm, int nn, int kk, real lrate, int maxiter2, int *realIter, real tol){
     real *VtW, *WtV, *WtW, *grad, curGrad = 0;
-    cudaMalloc((void**)&VtW, kk*nn*sizeof(real)); 
-    cudaMalloc((void**)&WtV, nn*kk*sizeof(real)); 
-    cudaMalloc((void**)&WtW, nn*nn*sizeof(real)); 
-    cudaMalloc((void**)&grad, nn*kk*sizeof(real)); 
+    cudaMalloc((void**)&VtW, kk*nn*sizeof(real));
+    cudaMalloc((void**)&WtV, nn*kk*sizeof(real));
+    cudaMalloc((void**)&WtW, nn*nn*sizeof(real));
+    cudaMalloc((void**)&grad, nn*kk*sizeof(real));
 
     int iter = 0;
-	for(int iter = 1; iter <= maxiter2; iter++){
+    for(iter = 1; iter <= maxiter2; iter++){
         //VtW = V'*W
         cusparseScsrmm(handle_sparse, transV, rowV, nn, colV, lineNumber, &one, descr_sparse, V, VRow, VCol, W, mm, &zero, VtW, kk);
         //WtV = (VtW)'
@@ -200,7 +204,7 @@ real subprob(real *V, cusparseOperation_t transV, int rowV, int colV, real *W, r
         if(curGrad < tol)
             break;
     }
-	*realIter = iter;
+    *realIter = iter;
 
     cudaFree(VtW);
     cudaFree(WtV);
@@ -216,17 +220,19 @@ void NMF(real *V, int *VRow, int *VCol, real lrate, int maxiter, int maxiter2, r
     real grad1 = 0, grad2 = 0, curGrad = 0, initGrad = 0;
 
     int nochange = 0;
-    cudaMalloc((void**)&Wt, m*n*sizeof(real)); 
-    cudaMalloc((void**)&Ht, n*k*sizeof(real)); 
+    cudaMalloc((void**)&Wt, m*n*sizeof(real));
+    cudaMalloc((void**)&Ht, n*k*sizeof(real));
 
-	for(int iter = 1; iter <= maxiter; iter++){
+    int iter = 1;
+    for(; iter <= maxiter; iter++){
         //update H, gradH = WtWH-(VtW)t
         int iterH = 0;
         grad1 = subprob(V, CUSPARSE_OPERATION_TRANSPOSE, m, k, W, H, m, n, k, lrate, maxiter2, &iterH, tolH);
-		if (iterH == 1 && tolH > 0.000001)
-			tolH = 0.1 * tolH;
-        cudaMemcpy(HValHost, H, (size_t)(n*k*sizeof(real)), cudaMemcpyDeviceToHost); 
-        for(int i = 0; i < n*k; i++)
+        if (iterH == 1 && tolH > 0.000001)
+            tolH = 0.1 * tolH;
+        cudaMemcpy(HValHost, H, (size_t)(n*k*sizeof(real)), cudaMemcpyDeviceToHost);
+        int i = 0;
+        for(; i < n*k; i++)
             if(HValHost[i] < 0)
                 HValHost[i] = 0;
         cudaMemcpy(H, HValHost, (size_t)(n*k*sizeof(real)), cudaMemcpyHostToDevice);
@@ -236,11 +242,11 @@ void NMF(real *V, int *VRow, int *VCol, real lrate, int maxiter, int maxiter2, r
         cublasSgeam(handle_blas, CUBLAS_OP_T, CUBLAS_OP_N, k, n, &one, H, n, &zero, Ht, k, Ht, k); //Ht
         int iterW = 0;
         grad2 = subprob(V, CUSPARSE_OPERATION_NON_TRANSPOSE, m, k, Ht, Wt, k, n, m, lrate, maxiter2, &iterW, tolW);
-		if (iterW == 1 && tolW > 0.000001)
-			tolW = 0.1 * tolW;
+        if (iterW == 1 && tolW > 0.000001)
+            tolW = 0.1 * tolW;
         cublasSgeam(handle_blas, CUBLAS_OP_T, CUBLAS_OP_N, m, n, &one, Wt, n, &zero, W, m, W, m); // W = Wt'
-        cudaMemcpy(WValHost, W, (size_t)(m*n*sizeof(real)), cudaMemcpyDeviceToHost); 
-        for(int i = 0; i < m*n; i++)
+        cudaMemcpy(WValHost, W, (size_t)(m*n*sizeof(real)), cudaMemcpyDeviceToHost);
+        for(i = 0; i < m*n; i++)
             if(WValHost[i] < 0)
                 WValHost[i] = 0;
         cudaMemcpy(W, WValHost, (size_t)(m*n*sizeof(real)), cudaMemcpyHostToDevice);
@@ -258,46 +264,47 @@ void NMF(real *V, int *VRow, int *VCol, real lrate, int maxiter, int maxiter2, r
     cudaFree(Ht);
 }
 
-int ArgPos(char *str, int argc, char **argv) {
-	int a;
-	for (a = 1; a < argc; a++) if (!strcmp(str, argv[a])) {
-		if (a == argc - 1) {
-			printf("Argument missing for %s\n", str);
-			exit(1);
-		}
-		return a;
-	}
-	return -1;
+int ArgPos(char *str, int argc, char **argv){
+    int a;
+    for (a = 1; a < argc; a++)
+        if (!strcmp(str, argv[a])){
+            if (a == argc - 1){
+                printf("Argument missing for %s\n", str);
+                exit(1);
+            }
+        return a;
+    }
+    return -1;
 }
 
 int main(int argc, char **argv){
-	int i;
-	if (argc == 1) {
-		printf("NMF: Non-negative Matrix Factorization\n\n");
-		printf("Options:\n");
-		printf("Parameters for training:\n");
-		printf("\t-train <file>\n");
-		printf("\t\tUse data from <file> to train the model;\n");
-		printf("\t-tlrate <float>\n");
-		printf("\t\tlearning rate; default is 0.05\n");
-		printf("\t-tfactor <int>\n");
-		printf("\t\tfactor number; default is 2\n");
-		printf("\t-titerMain <int>\n");
-		printf("\t\tmax iter number of main loop; default is 500\n");
-		printf("\t-titerSub <int>\n");
-		printf("\t\tmax iter number of sub problem; default is 100\n");
-		printf("\t-tgpuid <int>\n");
-		printf("\t\twhich gpu to use; default is 0\n");
-		printf("\nExamples:\n");
-		printf("./NMF_sgd -train test.txt -lrate 0.05 -factor 3 -iterMain 500 -iterSub 100 -gpuid 0\n\n");
-		return 0;
-	}
-	if ((i = ArgPos((char *)"-train", argc, argv)) > 0) strcpy(filename, argv[i + 1]);
-	if ((i = ArgPos((char *)"-lrate", argc, argv)) > 0) lrate = atof(argv[i + 1]);
-	if ((i = ArgPos((char *)"-factor", argc, argv)) > 0) n = atoi(argv[i + 1]);
-	if ((i = ArgPos((char *)"-iterMain", argc, argv)) > 0) maxiterMain = atoi(argv[i + 1]);
-	if ((i = ArgPos((char *)"-iterSub", argc, argv)) > 0) maxiterSub = atoi(argv[i + 1]);
-	if ((i = ArgPos((char *)"-gpuid", argc, argv)) > 0) gpuid = atoi(argv[i + 1]);
+    int i, j = 0;
+    if (argc == 1) {
+        printf("NMF: Non-negative Matrix Factorization\n\n");
+        printf("Options:\n");
+        printf("Parameters for training:\n");
+        printf("\t-train <file>\n");
+        printf("\t\tUse data from <file> to train the model;\n");
+        printf("\t-tlrate <float>\n");
+        printf("\t\tlearning rate; default is 0.05\n");
+        printf("\t-tfactor <int>\n");
+        printf("\t\tfactor number; default is 2\n");
+        printf("\t-titerMain <int>\n");
+        printf("\t\tmax iter number of main loop; default is 500\n");
+        printf("\t-titerSub <int>\n");
+        printf("\t\tmax iter number of sub problem; default is 100\n");
+        printf("\t-tgpuid <int>\n");
+        printf("\t\twhich gpu to use; default is 0\n");
+        printf("\nExamples:\n");
+        printf("./NMF_sgd -train test.txt -lrate 0.05 -factor 3 -iterMain 500 -iterSub 100 -gpuid 0\n\n");
+        return 0;
+    }
+    if ((i = ArgPos((char *)"-train", argc, argv)) > 0) strcpy(filename, argv[i + 1]);
+    if ((i = ArgPos((char *)"-lrate", argc, argv)) > 0) lrate = atof(argv[i + 1]);
+    if ((i = ArgPos((char *)"-factor", argc, argv)) > 0) n = atoi(argv[i + 1]);
+    if ((i = ArgPos((char *)"-iterMain", argc, argv)) > 0) maxiterMain = atoi(argv[i + 1]);
+    if ((i = ArgPos((char *)"-iterSub", argc, argv)) > 0) maxiterSub = atoi(argv[i + 1]);
+    if ((i = ArgPos((char *)"-gpuid", argc, argv)) > 0) gpuid = atoi(argv[i + 1]);
 
     initVaribles();
     shipping();
@@ -307,16 +314,16 @@ int main(int argc, char **argv){
     backHost();
     //save result
     FILE *f = fopen("W.txt", "w");
-    for(int i = 0; i < m; i++){
-        for(int j = 0; j < n; j++)
-            fprintf(f, "%.4f ", WValHost[IDX2C(i,j,m)]);
+    for(i = 0; i < m; i++){
+        for(j = 0; j < n; j++)
+            fprintf(f, "%.4f ", *(WValHost + IDX2C(i,j,m)));
         fprintf(f, "\n");
     }
     fclose(f);
     f = fopen("H.txt", "w");
-    for(int i = 0; i < n; i++){
-        for(int j = 0; j < k; j++)
-            fprintf(f, "%.4f ", HValHost[IDX2C(i,j,n)]);
+    for(i = 0; i < n; i++){
+        for(j = 0; j < k; j++)
+            fprintf(f, "%.4f ", *(HValHost + IDX2C(i,j,n)));
         fprintf(f, "\n");
     }
     fclose(f);
@@ -332,12 +339,13 @@ int main(int argc, char **argv){
     //slowTest
     /*
     real *Vdense, *VdenseHost;
-    cudaMalloc((void**)&Vdense, m*k*sizeof(real)); 
+    cudaMalloc((void**)&Vdense, m*k*sizeof(real));
     cublasSgemm(handle_blas, CUBLAS_OP_N, CUBLAS_OP_N, m, k, n, &one, W, m, H, n, &zero, Vdense, m);
-    cudaMemcpy(VdenseHost, Vdense, (size_t)(m*k*sizeof(real)), cudaMemcpyDeviceToHost); 
+    cudaMemcpy(VdenseHost, Vdense, (size_t)(m*k*sizeof(real)), cudaMemcpyDeviceToHost);
     printf("WH:\n");
     outPutMatrix(m, k, VdenseHost);
     */
 
     CLEANUP("done.");
+    return 0;
 }
