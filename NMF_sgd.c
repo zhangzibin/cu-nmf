@@ -257,7 +257,7 @@ void NMF(real *V, int *VRow, int *VCol, real lrate, int maxiter, int maxiter2, r
 
         //stop when grad < tol* initGrad
         curGrad = grad1 + grad2;
-        //printf("Iter %d, norm of grad: %10.6f\n", iter, curGrad);
+        printf("Iter %d, norm of grad: %10.6f\n", iter, curGrad);
         if(iter == 1)
             initGrad = curGrad;
         if(curGrad < tol*initGrad)
@@ -342,13 +342,16 @@ int main(int argc, char **argv){
 
     //slowTest
     /*
-    real *Vdense, *VdenseHost;
+    real *Vdense, *VdenseHost=0;
     cudaMalloc((void**)&Vdense, m*k*sizeof(real));
+    VdenseHost = (real *)malloc(m*k*sizeof(*VdenseHost));
     cublasSgemm(handle_blas, CUBLAS_OP_N, CUBLAS_OP_N, m, k, n, &one, W, m, H, n, &zero, Vdense, m);
     cudaMemcpy(VdenseHost, Vdense, (size_t)(m*k*sizeof(real)), cudaMemcpyDeviceToHost);
     printf("WH:\n");
     outPutMatrix(m, k, VdenseHost);
     */
+
+    printf("----------\n");
 
     CLEANUP("done.");
     return 0;
