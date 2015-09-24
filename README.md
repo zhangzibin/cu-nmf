@@ -1,14 +1,14 @@
 # cu-nmf
-NMF(Non-negative Matrix Factorization) based on cuda, sparse matrix as input. Aim at large scale data and fast training.
+NMF(Non-negative Matrix Factorization) based on cuda, with sparse matrix as input. Aim at large scale data and fast training.
 
 
 # Requirements
-The code is base on cuda, cuBlas and cuSparse precisely. Please get cuda from Nvidia, https://developer.nvidia.com/cuda-downloads.
+The code is base on cuda, cuBlas and cuSparse precisely. Please get cuda from Nvidia's website, https://developer.nvidia.com/cuda-downloads.
 
 # Future Work
-Only SGD with fixed learning rate is support by now for its simplicity and the main algorithm is alternating non-negative least squares.
+Only SGD with fixed learning rate has supported by now for its simplicity. The main algorithm is alternating non-negative least square.
 
-If time permits, I will implement other algorithms(projected gradient methods, multiplicative update rules, and multi-GPU support) in the feature.
+If time permits, I will implement other algorithms(projected gradient methods, multiplicative update rules, and multi-GPU support) in the future.
 
 
 # Usage
