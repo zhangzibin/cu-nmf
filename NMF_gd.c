@@ -300,7 +300,7 @@ int main(int argc, char **argv){
         printf("\t-tgpuid <int>\n");
         printf("\t\twhich gpu to use; default is 0\n");
         printf("\nExamples:\n");
-        printf("./NMF_sgd -train test.txt -lrate 0.05 -factor 3 -iterMain 500 -iterSub 100 -gpuid 0\n\n");
+        printf("./NMF_gd -train test.txt -lrate 0.05 -factor 3 -iterMain 500 -iterSub 100 -gpuid 0\n\n");
         return 0;
     }
     if ((i = ArgPos((char *)"-train", argc, argv)) > 0) strcpy(filename, argv[i + 1]);
