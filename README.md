@@ -18,7 +18,7 @@ You should use nvcc to compile the code, so make sure cuda is installed and envi
 
 ```bash
 $ make
-$ ./NMF_sgd -train test.txt
+$ ./NMF_gd -train test.txt
 ```
 
 You should notice it's hard for GD to turn parameters. -lrate and -iterMain -iterSub should be turned according your data.
