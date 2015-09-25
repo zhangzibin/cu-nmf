@@ -1,7 +1,7 @@
 # cu-nmf
 NMF(Non-negative Matrix Factorization) based on cuda, with sparse matrix as input.
 
-Only GD(gradient descent) with fixed learning rate has supported by now for its simplicity. GD is not a fully correct method for NMF because the projection while training. So the result sometimes very poor. The main algorithm is alternating non-negative least square. 
+Only GD(gradient descent) with fixed learning rate has supported by now for its simplicity. GD is not a fully correct method for NMF because of the projection while training. So sometimes the result is very poor. The main algorithm is alternating non-negative least square. 
 
 
 # Future Work
