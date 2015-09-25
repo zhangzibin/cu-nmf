@@ -1,4 +1,4 @@
 default:
-	nvcc NMF_sgd.c -lcusparse -lcublas -o NMF_sgd
+	nvcc NMF_gd.c -lcusparse -lcublas -o NMF_gd
 clean:
-	rm NMF_sgd
+	rm NMF_gd

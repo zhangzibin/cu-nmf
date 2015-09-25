@@ -1,7 +1,7 @@
 # cu-nmf
 NMF(Non-negative Matrix Factorization) based on cuda, with sparse matrix as input.
 
-Only SGD with fixed learning rate has supported by now for its simplicity. The main algorithm is alternating non-negative least square. 
+Only GD(gradient descent) with fixed learning rate has supported by now for its simplicity. GD is not a fully correct method for NMF because the projection while training. So the result sometimes very poor. The main algorithm is alternating non-negative least square. 
 
 
 # Future Work
@@ -21,4 +21,4 @@ $ make
 $ ./NMF_sgd -train test.txt
 ```
 
-You should notice it's hard for SGD to turn parameters. -lrate and -iterMain -iterSub should be turned according your data.
+You should notice it's hard for GD to turn parameters. -lrate and -iterMain -iterSub should be turned according your data.
