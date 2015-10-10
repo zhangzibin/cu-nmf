@@ -43,6 +43,7 @@ cusparseHandle_t handle_sparse = 0;
 cusparseMatDescr_t descr_sparse = 0;
 cublasHandle_t handle_blas = 0;
 cudaError_t cudaStat;       //for cuda errors
+dim3 threadsPerBlock(16);
 
 /* a macro for free memory*/
 #define CLEANUP(s)                                  \
@@ -62,6 +63,13 @@ do {                                                \
     fflush (stdout);                                \
 } while (0)
 
+//clip negative value
+__global__ void clipNegative(real *A, int N){
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if(i < N && A[i] < 0)
+        A[i] = 0;
+}
+
 /* random init a array data of size p */
 void randomInit(real *data, int p){
     int i = 0;
@@ -70,8 +78,7 @@ void randomInit(real *data, int p){
 }
 
 /* print a matrix of size row*col */
-void outPutMatrix(int row, int col, real *A)
-{
+void outPutMatrix(int row, int col, real *A){
     int i, j;
     for(i = 0; i < row; i++){
         for(j = 0; j < col; j++)
@@ -165,7 +172,7 @@ void shipping(){
     cudaMemcpy(VdenseHost, Vdense, (size_t)(m*k*sizeof(real)), cudaMemcpyDeviceToHost);
     printf("V:\n");
     outPutMatrix(m, k, VdenseHost);
-    */
+    /*
 
     /* free some useless variables */
     if (VValHost) free(VValHost);
@@ -223,7 +230,6 @@ void NMF(real *V, int *VRow, int *VCol, real lrate, int maxiter, int maxiter2, r
     real tolH = 0.001, tolW = 0.001, tol = 0.0001;
     real grad1 = 0, grad2 = 0, curGrad = 0, initGrad = 0;
 
-    int nochange = 0;
     cudaMalloc((void**)&Wt, m*n*sizeof(real));
     cudaMalloc((void**)&Ht, n*k*sizeof(real));
 
@@ -232,28 +238,22 @@ void NMF(real *V, int *VRow, int *VCol, real lrate, int maxiter, int maxiter2, r
         //update H, gradH = WtWH-(VtW)t
         int iterH = 0;
         grad1 = subprob(V, CUSPARSE_OPERATION_TRANSPOSE, m, k, W, H, m, n, k, lrate, maxiter2, &iterH, tolH);
-        if (iterH == 1 && tolH > 0.000001)
+        if(iterH == 1 && tolH > 0.000001)
             tolH = 0.1 * tolH;
-        cudaMemcpy(HValHost, H, (size_t)(n*k*sizeof(real)), cudaMemcpyDeviceToHost);
-        int i = 0;
-        for(; i < n*k; i++)
-            if(HValHost[i] < 0)
-                HValHost[i] = 0;
-        cudaMemcpy(H, HValHost, (size_t)(n*k*sizeof(real)), cudaMemcpyHostToDevice);
+
+        dim3 num1(n*k / threadsPerBlock.x);
+        clipNegative<<<num1, threadsPerBlock>>>(H, n*k);
 
         //update W, Vt = HtWt, then Wt is the same as H before
         cublasSgeam(handle_blas, CUBLAS_OP_T, CUBLAS_OP_N, n, m, &one, W, m, &zero, Wt, n, Wt, n); //Wt
         cublasSgeam(handle_blas, CUBLAS_OP_T, CUBLAS_OP_N, k, n, &one, H, n, &zero, Ht, k, Ht, k); //Ht
         int iterW = 0;
         grad2 = subprob(V, CUSPARSE_OPERATION_NON_TRANSPOSE, m, k, Ht, Wt, k, n, m, lrate, maxiter2, &iterW, tolW);
-        if (iterW == 1 && tolW > 0.000001)
+        if(iterW == 1 && tolW > 0.000001)
             tolW = 0.1 * tolW;
         cublasSgeam(handle_blas, CUBLAS_OP_T, CUBLAS_OP_N, m, n, &one, Wt, n, &zero, W, m, W, m); // W = Wt'
-        cudaMemcpy(WValHost, W, (size_t)(m*n*sizeof(real)), cudaMemcpyDeviceToHost);
-        for(i = 0; i < m*n; i++)
-            if(WValHost[i] < 0)
-                WValHost[i] = 0;
-        cudaMemcpy(W, WValHost, (size_t)(m*n*sizeof(real)), cudaMemcpyHostToDevice);
+        dim3 num2(m*n / threadsPerBlock.x);
+        clipNegative<<<num2, threadsPerBlock>>>(W, m*n);
 
         //stop when grad < tol* initGrad
         curGrad = grad1 + grad2;
