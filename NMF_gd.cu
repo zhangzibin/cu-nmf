@@ -241,7 +241,7 @@ void NMF(real *V, int *VRow, int *VCol, real lrate, int maxiter, int maxiter2, r
         if(iterH == 1 && tolH > 0.000001)
             tolH = 0.1 * tolH;
 
-        dim3 num1(n*k / threadsPerBlock.x);
+        dim3 num1(n*k / threadsPerBlock.x + 1);
         clipNegative<<<num1, threadsPerBlock>>>(H, n*k);
 
         //update W, Vt = HtWt, then Wt is the same as H before
@@ -252,7 +252,7 @@ void NMF(real *V, int *VRow, int *VCol, real lrate, int maxiter, int maxiter2, r
         if(iterW == 1 && tolW > 0.000001)
             tolW = 0.1 * tolW;
         cublasSgeam(handle_blas, CUBLAS_OP_T, CUBLAS_OP_N, m, n, &one, Wt, n, &zero, W, m, W, m); // W = Wt'
-        dim3 num2(m*n / threadsPerBlock.x);
+        dim3 num2(m*n / threadsPerBlock.x + 1);
         clipNegative<<<num2, threadsPerBlock>>>(W, m*n);
 
         //stop when grad < tol* initGrad
