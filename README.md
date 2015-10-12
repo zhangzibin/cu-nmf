@@ -20,5 +20,5 @@ You should use nvcc to compile the code, so make sure cuda is installed and envi
 
 ```bash
 $ make
-$ ./NMF_pgd -train test.txt
+$ ./NMF_pgd 
 ```
