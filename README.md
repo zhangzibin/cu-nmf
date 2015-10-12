@@ -1,11 +1,13 @@
 # cu-nmf
 NMF(Non-negative Matrix Factorization) based on cuda, with sparse matrix as input.
 
-Only GD(gradient descent) with fixed learning rate has supported by now for its simplicity. The main algorithm is alternating non-negative least square. GD is not a correct method for NMF because of the projection while training. So the result is very poor. Therefore it is only a demo for study. I am working on other algorithms.   
+**NMF_pgd.cu**  This code solves NMF by alternative non-negative least squares using projected gradients. It's a implementation of [Projected gradient methods for non-negative matrix factorization](https://www.csie.ntu.edu.tw/~cjlin/papers/pgradnmf.pdf).
 
+
+**NMF_gd.cu** Directly GD(gradient descent) with fixed learning rate is only a simple demo for study. Using alternating non-negative least square to slove NMF problem, GD is not a correct method because of the projection while training. 
 
 # Future Work
-If time permits, I will implement other algorithms(projected gradient methods, multiplicative update rules, and multi-GPU support) in the future(not soon, however). 
+If time permits, I will implement other algorithms(multiplicative update rules, and multi-GPU support) in the future(not soon, however). 
 
 # Requirements
 The code is base on cuda, cuBlas and cuSparse precisely. Please get cuda from Nvidia's website, https://developer.nvidia.com/cuda-downloads.
@@ -18,7 +20,5 @@ You should use nvcc to compile the code, so make sure cuda is installed and envi
 
 ```bash
 $ make
-$ ./NMF_gd -train test.txt
+$ ./NMF_pgd -train test.txt
 ```
-
-You should notice it's hard for GD to turn parameters. -lrate and -iterMain -iterSub should be turned according your data.
