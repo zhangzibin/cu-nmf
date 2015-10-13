@@ -390,21 +390,76 @@ void backHost(){
     cudaMemcpy(HHost, H, (size_t)(n*k*sizeof(real)), cudaMemcpyDeviceToHost);
 }
 
+int ArgPos(char *str, int argc, char **argv){
+    int a;
+    for (a = 1; a < argc; a++)
+        if (!strcmp(str, argv[a])){
+            if (a == argc - 1){
+                printf("Argument missing for %s\n", str);
+                exit(1);
+            }
+        return a;
+    }
+    return -1;
+}
+
 int main(int argc, char **argv){
-    strcpy(filename, "test.txt");
+    int i, j;
+    if(argc == 1){
+        printf("NMF: Non-negative Matrix Factorization\n\n");
+        printf("Options:\n");
+        printf("Parameters for training:\n");
+        printf("\t-train <file>\n");
+        printf("\t\tUse data from <file> to train the model;\n");
+        printf("\t-factor <int>\n");
+        printf("\t\tfactor number; default is 3\n");
+        printf("\t-maxiter <int>\n");
+        printf("\t\tmaxiter for main loop; default is 10\n");
+        printf("\t-timelimit <int>\n");
+        printf("\t\ttimelimit for training; default is 100s\n");
+        printf("\t-gpuid <int>\n");
+        printf("\t\twhich gpu to use; default is 0\n");
+        printf("\nExamples:\n");
+        printf("./NMF_gd -train test.txt -factor 3 -maxiter 10 -timelimit 100 -gpuid 0\n\n");
+        return 0;
+    }
+    if ((i = ArgPos((char *)"-train", argc, argv)) > 0) strcpy(filename, argv[i + 1]);
+    if ((i = ArgPos((char *)"-factor", argc, argv)) > 0) n = atoi(argv[i + 1]);
+    if ((i = ArgPos((char *)"-maxiter", argc, argv)) > 0) maxiter = atoi(argv[i + 1]);
+    if ((i = ArgPos((char *)"-timelimit", argc, argv)) > 0) timelimit = atoi(argv[i + 1]);
+    if ((i = ArgPos((char *)"-gpuid", argc, argv)) > 0) gpuid = atoi(argv[i + 1]);
 
     initVaribles();
     shipping();
     NMF();
-    backHost();
 
+    //save result
+    backHost();
+    FILE *f = fopen("W.txt", "w");
+    for(i = 0; i < m; i++){
+        for(j = 0; j < n; j++)
+            fprintf(f, "%.4f ", *(WHost + IDX2C(i,j,m)));
+        fprintf(f, "\n");
+    }
+    fclose(f);
+    f = fopen("H.txt", "w");
+    for(i = 0; i < n; i++){
+        for(j = 0; j < k; j++)
+            fprintf(f, "%.4f ", *(HHost + IDX2C(i,j,n)));
+        fprintf(f, "\n");
+    }
+    fclose(f);
+
+    /*
     printf("Result:\n");
     printf("W:\n");
     outPutMatrix(m, n, WHost);
     printf("H:\n");
     outPutMatrix(n, k, HHost);
+    */
 
     //slowTest
+    /*
     real *Vdense, *VdenseHost=0;
     cudaMalloc((void**)&Vdense, m*k*sizeof(real));
     VdenseHost = (real *)malloc(m*k*sizeof(*VdenseHost));
@@ -412,6 +467,7 @@ int main(int argc, char **argv){
     cudaMemcpy(VdenseHost, Vdense, (size_t)(m*k*sizeof(real)), cudaMemcpyDeviceToHost);
     printf("WH:\n");
     outPutMatrix(m, k, VdenseHost);
+    */
 
     CLEANUP("end.");
     return 0;
