@@ -356,13 +356,11 @@ void NMF(){
         projnorm += tmpnorm;
         projnorm = sqrt(projnorm);
         printf("Iter %d, projnorm %f\n", iter, projnorm);
-        if(iter == 1)
-            lastnorm = projnorm;
-        else
-            if(projnorm == lastnorm)
-                break;
+        if(iter != 1 && projnorm == lastnorm)
+            break;
         if(projnorm < tol*initgrad || time(NULL)-initt > timelimit)
             break;
+        lastnorm = projnorm;
 
         //update W, Vt = HtWt, then Wt is the same as H before
         cublasSgeam(handle_blas, CUBLAS_OP_T, CUBLAS_OP_N, n, m, &one, W, m, &zero, Wt, n, Wt, n); //Wt
