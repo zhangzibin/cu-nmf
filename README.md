@@ -1,7 +1,7 @@
 # cu-nmf
 NMF(Non-negative Matrix Factorization) based on cuda, with sparse matrix as input.
 
-**NMF_pgd.cu**  This code solves NMF by alternative non-negative least squares using projected gradients. It's a implementation of [Projected gradient methods for non-negative matrix factorization](https://www.csie.ntu.edu.tw/~cjlin/papers/pgradnmf.pdf).
+**NMF_pgd.cu**  <p style='color:red'>WARNING: bug remains, I am fixing!</p> This code solves NMF by alternative non-negative least squares using projected gradients. It's a implementation of [Projected gradient methods for non-negative matrix factorization](https://www.csie.ntu.edu.tw/~cjlin/papers/pgradnmf.pdf).
 
 
 **NMF_gd.cu** Directly GD(gradient descent) with fixed learning rate is only a simple demo for study. Using alternating non-negative least square to slove NMF problem, GD is not a correct method because of the projection while training. 
