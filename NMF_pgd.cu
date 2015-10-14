@@ -93,14 +93,6 @@ __global__ void clipNegative(real *A, int N){
 __global__ void getUsefulGrad(real *grad, real *H, real *tmpvec, int N){
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if(i < N)
-        if(grad[i] < 0 || H[i] < 0)
-            tmpvec[i] = grad[i];
-}
-
-//projnorm = norm([gradW(gradW<0 | W>0); gradH(gradH<0 | H>0)]);
-__global__ void getUsefulGrad2(real *grad, real *H, real *tmpvec, int N){
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if(i < N)
         if(grad[i] < 0 || H[i] > 0)
             tmpvec[i] = grad[i];
 }
@@ -209,7 +201,7 @@ void subprob(real *V, cusparseOperation_t transV, int rowV, int colV, real *W, r
 
     real *Hn = 0;
     cudaMalloc((void**)&Hn, nn*kk*sizeof(real));
-    cudaMemcpy(Hn, H, nn*kk*sizeof(real), cudaMemcpyDeviceToDevice);
+    cudaMemset(Hn, 0, nn*kk*sizeof(real));
 
     real *d = 0;
     cudaMalloc((void**)&d, nn*kk*sizeof(real));
@@ -235,6 +227,7 @@ void subprob(real *V, cusparseOperation_t transV, int rowV, int colV, real *W, r
         //grad = WtW*H - WtV;
         cudaMemcpy(grad, WtV, nn*kk*sizeof(real), cudaMemcpyDeviceToDevice);//grad = WtV (tmp step)
         cublasSgemm(handle_blas, CUBLAS_OP_N, CUBLAS_OP_N, nn, kk, nn, &one, WtW, nn, H, nn, &negOne, grad, nn);//grad = WtW*H - WtV;
+
         //projgrad = norm(grad(grad < 0 | H >0))
         cudaMemset(tmpvec, 0, nn*kk*sizeof(real));
         dim3 num1(nn*kk / threadsPerBlock.x + 1);
@@ -348,10 +341,10 @@ void NMF(){
         //stopping condition
         //projnorm = norm([gradW(gradW<0 | W>0); gradH(gradH<0 | H>0)]);
         dim3 num3(m*n / threadsPerBlock.x + 1);
-        getUsefulGrad2<<<num3, threadsPerBlock>>>(gradW, W, tmpvec, m*n);
+        getUsefulGrad<<<num3, threadsPerBlock>>>(gradW, W, tmpvec, m*n);
         cublasSdot(handle_blas, m*n, tmpvec, 1, tmpvec, 1, &projnorm);
         dim3 num4(n*k / threadsPerBlock.x + 1);
-        getUsefulGrad2<<<num4, threadsPerBlock>>>(gradH, H, tmpvec2, n*k);
+        getUsefulGrad<<<num4, threadsPerBlock>>>(gradH, H, tmpvec2, n*k);
         cublasSdot(handle_blas, n*k, tmpvec2, 1, tmpvec2, 1, &tmpnorm);
         projnorm += tmpnorm;
         projnorm = sqrt(projnorm);
@@ -458,8 +451,7 @@ int main(int argc, char **argv){
     outPutMatrix(n, k, HHost);
     */
 
-    //slowTest
-    /*
+    //slowTest, must comment when V is big
     real *Vdense, *VdenseHost=0;
     cudaMalloc((void**)&Vdense, m*k*sizeof(real));
     VdenseHost = (real *)malloc(m*k*sizeof(*VdenseHost));
@@ -467,7 +459,6 @@ int main(int argc, char **argv){
     cudaMemcpy(VdenseHost, Vdense, (size_t)(m*k*sizeof(real)), cudaMemcpyDeviceToHost);
     printf("WH:\n");
     outPutMatrix(m, k, VdenseHost);
-    */
 
     CLEANUP("end.");
     return 0;
