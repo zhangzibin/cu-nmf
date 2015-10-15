@@ -9,8 +9,8 @@
 /*
 We use float here, if you want to use double:
     1. typedef float real; --> typedef double real;
-    2. Then replace all cuSparse and cuBlas function to double version
-       This is quiet simple, for example: cublasSaxpy --> cublasSaxpy
+    2. Then replace all cuSparse and cuBlas function with its double version
+       This is quiet simple, for example: cublasSaxpy --> cublasDaxpy
 */
 typedef float real; 
 
@@ -28,7 +28,7 @@ cusparseHandle_t handle_sparse = 0;
 cusparseMatDescr_t descr_sparse = 0;
 cublasHandle_t handle_blas = 0;
 cudaError_t cudaStat;       //for cuda errors
-dim3 threadsPerBlock(256);
+dim3 threadsPerBlock(256); // thread number each block
 
 /* define variables */
 char filename[100];         //the file of V, store as sparse matrix
