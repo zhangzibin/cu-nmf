@@ -7,7 +7,7 @@ NMF(Non-negative Matrix Factorization) based on cuda, with sparse matrix as inpu
 **NMF_gd.cu** Directly GD(gradient descent) with fixed learning rate is only a simple demo for study. Using alternating non-negative least square to slove NMF problem, GD is **not a correct method** because of the projection while training. 
 
 # Future Work
-If time permits, I will implement other algorithms(multiplicative update rules, and multi-GPUs support) in the future(not soon, however). 
+I will extend the algorithm to work on multi-GPUs in the future(not soon, however). Aim at large scale datasets.   
 
 # Requirements
 The code is base on cuda, cuBlas and cuSparse precisely. Please get cuda from Nvidia's website, https://developer.nvidia.com/cuda-downloads.
