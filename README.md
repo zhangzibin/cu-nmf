@@ -1,7 +1,7 @@
 # cu-nmf
 NMF(Non-negative Matrix Factorization) based on cuda, with sparse matrix as input.
 
-**NMF_pgd.cu** **WARNING: Sometimes projnorm changes in a strange way, I'm fixing!** This code solves NMF by alternative non-negative least squares using projected gradients. It's an implementation of [Projected gradient methods for non-negative matrix factorization](https://www.csie.ntu.edu.tw/~cjlin/papers/pgradnmf.pdf). You may read the paper for more details.
+**NMF_pgd.cu** This code solves NMF by alternative non-negative least squares using projected gradients. It's an implementation of [Projected gradient methods for non-negative matrix factorization](https://www.csie.ntu.edu.tw/~cjlin/papers/pgradnmf.pdf). You may read the paper for more details.
 
 
 **NMF_gd.cu** Directly GD(gradient descent) with fixed learning rate is only a simple demo for study. Using alternating non-negative least square to slove NMF problem, GD is **not a correct method** because of the projection while training. 
@@ -20,5 +20,16 @@ You should use nvcc to compile the code, so make sure cuda is installed and envi
 
 ```bash
 $ make
-$ ./NMF_pgd 
+$ ./NMF_pgd -train test.txt
 ```
+test.txt is the file storing matrix V in sparse format.
+
+# Options for NMF_pgd
+**-factor** Factor number, which is n in fractorization m*k=(m*n)(n*k), default is 3.
+
+**-maxiter** Max iter number for alternating update, default is 100.
+
+**-timelimit** Sometimes the algorithm takes a long time to converge, you may want to stop early, default is 1000s.
+
+**-gpuid** Choose the gpu device to use, default is 0.
+
