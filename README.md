@@ -7,7 +7,7 @@ NMF(Non-negative Matrix Factorization) based on cuda, with sparse matrix as inpu
 **NMF_gd.cu** Directly GD(gradient descent) with fixed learning rate is only a simple demo for study. Using alternating non-negative least square to slove NMF problem, GD is **not a correct method** because of the projection while training. 
 
 # Future Work
-If time permits, I will implement other algorithms(multiplicative update rules, and multi-GPU support) in the future(not soon, however). 
+If time permits, I will implement other algorithms(multiplicative update rules, and multi-GPUs support) in the future(not soon, however). 
 
 # Requirements
 The code is base on cuda, cuBlas and cuSparse precisely. Please get cuda from Nvidia's website, https://developer.nvidia.com/cuda-downloads.
@@ -25,8 +25,9 @@ $ ./NMF_pgd -train test.txt
 test.txt is the file storing matrix V in sparse format.
 
 # Options for NMF_pgd
-**-factor** Factor number, which is n in fractorization m*k=(m*n)(n*k), default is 3.<br />  
-**-maxiter** Max iter number for alternating update, default is 100.<br />  
-**-timelimit** Sometimes the algorithm takes a long time to converge, you may want to stop early, default is 1000s.<br />  
-**-gpuid** Choose the gpu device to use, default is 0.<br />  
+- **-factor** Factor number, which is n in fractorization m*k=(m*n)(n*k), default is 3.
+- **-maxiter** Max iter number for alternating update, default is 100. 
+- **-timelimit** Sometimes the algorithm takes a long time to converge, you may want to stop early, default is 1000s.
+- **-gpuid** Choose the gpu device to use, default is 0.
+
 
