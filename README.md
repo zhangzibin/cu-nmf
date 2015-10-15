@@ -25,11 +25,8 @@ $ ./NMF_pgd -train test.txt
 test.txt is the file storing matrix V in sparse format.
 
 # Options for NMF_pgd
-**-factor** Factor number, which is n in fractorization m*k=(m*n)(n*k), default is 3.
-
-**-maxiter** Max iter number for alternating update, default is 100.
-
-**-timelimit** Sometimes the algorithm takes a long time to converge, you may want to stop early, default is 1000s.
-
-**-gpuid** Choose the gpu device to use, default is 0.
+**-factor** Factor number, which is n in fractorization m*k=(m*n)(n*k), default is 3.<br />  
+**-maxiter** Max iter number for alternating update, default is 100.<br />  
+**-timelimit** Sometimes the algorithm takes a long time to converge, you may want to stop early, default is 1000s.<br />  
+**-gpuid** Choose the gpu device to use, default is 0.<br />  
 
