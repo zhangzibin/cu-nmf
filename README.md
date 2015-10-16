@@ -22,12 +22,11 @@ You should use nvcc to compile the code, so make sure cuda is installed and envi
 $ make
 $ ./NMF_pgd -train test.txt
 ```
-test.txt is the file storing matrix V in sparse format.
-
-# Options for NMF_pgd
+-- **-train** The file storing matrix V in sparse format, required.
 - **-factor** Factor number, which is n in fractorization m*k=(m*n)(n*k), default is 3.
 - **-maxiter** Max iter number for alternating update, default is 100. 
 - **-timelimit** Sometimes the algorithm takes a long time to converge, you may want to stop early, default is 1000s.
+- **-tol** Tolerance of stop condition; default is 0.001.
 - **-gpuid** Choose the gpu device to use, default is 0.
 
 

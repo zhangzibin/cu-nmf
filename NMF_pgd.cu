@@ -356,7 +356,7 @@ void NMF(){
     cudaMalloc((void**)&Ht, n*k*sizeof(real));
 
     int iter = 0;
-    real projnorm = 0, tmpnorm = 0, lastnorm = 0;
+    real projnorm = 0, tmpnorm = 0;
     for(iter = 1; iter <= maxiter; iter++){
         //stopping condition
         //projnorm = norm([gradW(gradW<0 | W>0); gradH(gradH<0 | H>0)]);
@@ -371,11 +371,8 @@ void NMF(){
         projnorm += tmpnorm;
         projnorm = sqrt(projnorm);
         printf("Iter %d, projnorm %f\n", iter, projnorm);
-        if(iter != 1 && projnorm == lastnorm)
-            break;
         if(projnorm < tol*initgrad || time(NULL)-initt > timelimit)
             break;
-        lastnorm = projnorm;
 
         //update W, Vt = HtWt, then Wt is the same as H before
         cublasSgeam(handle_blas, CUBLAS_OP_T, CUBLAS_OP_N, n, m, &one, W, m, &zero, Wt, n, Wt, n); //Wt
@@ -439,6 +436,8 @@ int main(int argc, char **argv){
         printf("\t\tmaxiter for main loop; default is 100\n");
         printf("\t-timelimit <int>\n");
         printf("\t\ttimelimit for training; default is 1000s\n");
+        printf("\t-tol <float>\n");
+        printf("\t\ttolerance of stop condition; default is 0.001\n");
         printf("\t-gpuid <int>\n");
         printf("\t\twhich gpu to use; default is 0\n");
         printf("\nExamples:\n");
@@ -449,6 +448,7 @@ int main(int argc, char **argv){
     if((i = ArgPos((char *)"-factor", argc, argv)) > 0) n = atoi(argv[i + 1]);
     if((i = ArgPos((char *)"-maxiter", argc, argv)) > 0) maxiter = atoi(argv[i + 1]);
     if((i = ArgPos((char *)"-timelimit", argc, argv)) > 0) timelimit = atoi(argv[i + 1]);
+    if((i = ArgPos((char *)"-tol", argc, argv)) > 0) tol = atof(argv[i + 1]);
     if((i = ArgPos((char *)"-gpuid", argc, argv)) > 0) gpuid = atoi(argv[i + 1]);
 
     initVaribles();
@@ -482,13 +482,15 @@ int main(int argc, char **argv){
 
     //slowTest, must comment when V is big
     /*
-    real *Vdense, *VdenseHost=0;
+    real *WH, *Vdense;
     cudaMalloc((void**)&Vdense, m*k*sizeof(real));
-    VdenseHost = (real *)malloc(m*k*sizeof(*VdenseHost));
-    cublasSgemm(handle_blas, CUBLAS_OP_N, CUBLAS_OP_N, m, k, n, &one, W, m, H, n, &zero, Vdense, m);
-    cudaMemcpy(VdenseHost, Vdense, (size_t)(m*k*sizeof(real)), cudaMemcpyDeviceToHost);
-    printf("WH:\n");
-    outPutMatrix(m, k, VdenseHost);
+    cusparseScsr2dense(handle_sparse, m, k, descr_sparse, V, VRow, VCol, Vdense, m);
+    cudaMalloc((void**)&WH, m*k*sizeof(real));
+    cublasSgemm(handle_blas, CUBLAS_OP_N, CUBLAS_OP_N, m, k, n, &one, W, m, H, n, &zero, WH, m);
+    cublasSaxpy(handle_blas, m*k, &negOne, WH, 1, Vdense, 1);
+    real test = 0;
+    cublasSnrm2(handle_blas, m*k, Vdense, 1, &test);
+    printf("||V-WH||2: %f\n", test);
     */
 
     CLEANUP("end.");
